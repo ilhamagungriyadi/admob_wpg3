@@ -14,6 +14,7 @@ import android.graphics.RectF;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -21,10 +22,16 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
+import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
@@ -34,6 +41,7 @@ import java.io.IOException;
 public class BreakoutGame extends AppCompatActivity {
 
     private AdView mAdView;
+    private InterstitialAd mInterstitialAd;
     BreakoutView breakoutView;
 
 
@@ -46,27 +54,102 @@ public class BreakoutGame extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        // Initialize gameView and set it as the view
         breakoutView = new BreakoutView(this);
-        setContentView(breakoutView);
 
-        setContentView(R.layout.activity_main);
-
-        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+        MobileAds.initialize(this, new OnInitializationCompleteListener()
+        {
             @Override
-            public void onInitializationComplete(InitializationStatus initializationStatus) {
+            public void onInitializationComplete(InitializationStatus initializationStatus)
+            {
+
             }
         });
 
-        mAdView = findViewById(R.id.adView);
+        // CREATE OBJECT, SET AD UNIT ID, REQUEST, LISTENING
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                // Code to be executed when an ad finishes loading.
+                Toast.makeText(BreakoutGame.this, "onAdLoaded()", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                // Code to be executed when an ad request fails.
+                Toast.makeText(BreakoutGame.this,
+                        "onAdFailedToLoad() with error code: " + errorCode,
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onAdOpened() {
+                // Code to be executed when the ad is displayed.
+            }
+
+            @Override
+            public void onAdClicked() {
+                // Code to be executed when the user clicks on an ad.
+            }
+
+            @Override
+            public void onAdLeftApplication() {
+                // Code to be executed when the user has left the app.
+            }
+
+            @Override
+            public void onAdClosed() {
+                // Load the next interstitial.
+                mInterstitialAd.loadAd(new AdRequest.Builder().build());
+            }
+
+        });
+
+        //CREATE NEW ADVIEW BANNER AND SET SIZE AND UNIT ID
+        mAdView = new AdView(this);
+        mAdView.setAdSize(AdSize.BANNER);
+        mAdView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+
+        /*
+        adView = new AdView(this);
+        adView.setAdSize(AdSize.BANNER);
+        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+         */
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        FrameLayout game = new FrameLayout(this);
+        LinearLayout gameWidgets = new LinearLayout(this);
+
+        RelativeLayout relativeLayout = new RelativeLayout(this);
+
+        RelativeLayout.LayoutParams adViewParams = new RelativeLayout.LayoutParams(
+                AdView.LayoutParams.WRAP_CONTENT,
+                AdView.LayoutParams.WRAP_CONTENT);
+
+        adViewParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        adViewParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
+
+        relativeLayout.addView(mAdView, adViewParams);
+
+        //LOAD ADS AND DISPLAY
+        //mAdView = findViewById(R.id.adView);
         AdRequest adRequest = new AdRequest.Builder().build();
         mAdView.loadAd(adRequest);
+        //adView.loadAd(adRequest);
 
-        AdView adView = new AdView(this);
-        adView.setAdSize(AdSize.SMART_BANNER);
-        adView.setAdUnitId("ca-app-pub-3940256099942544/6300978111");
+        game.addView(breakoutView);
+        game.addView(relativeLayout);
 
+        game.addView(gameWidgets);
 
+        setContentView(game);
+        /*mAdView = findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+    */
     }
 
     // Here is our implementation of GameView
@@ -292,6 +375,7 @@ public class BreakoutGame extends AppCompatActivity {
 
                 if (lives == 0) {
                     paused = true;
+                    showInterstitial();
                     createBricksAndRestart();
                 }
             }
@@ -342,6 +426,26 @@ public class BreakoutGame extends AppCompatActivity {
             }
 
         }
+
+        public void showInterstitial() {
+            if(Looper.myLooper() != Looper.getMainLooper()) {
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        doShowInterstitial();
+                    }
+                });
+            } else {
+                doShowInterstitial();
+            }
+        }
+        private void doShowInterstitial() {
+            if (mInterstitialAd.isLoaded()) {
+                mInterstitialAd.show();
+            } else {
+                //Log.d(TAG, "Interstitial ad is not loaded yet");
+            }
+        }
+
         // Draw the newly updated scene
         public void draw() {
 

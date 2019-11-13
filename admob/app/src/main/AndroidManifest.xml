@@ -9,9 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3832203238029686~8106159884"/>
+
         <activity android:name=".BreakoutGame">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -19,6 +17,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3832203238029686~8106159884"/>
     </application>
 
 </manifest>
